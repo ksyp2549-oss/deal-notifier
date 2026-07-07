@@ -1,0 +1,9 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+
+# data/deals.db は GitHub Actions が永続化のためコミットする(ローカルDocker運用時のみ無視)
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm

@@ -1,0 +1,41 @@
+# 監視対象と「激安」判定ルールの設定ファイル。
+# 環境変数(.env)にはAPIキーなど秘匿情報のみを置き、こちらは監視条件の調整用。
+
+rakuten:
+  enabled: true
+  poll_interval_minutes: 15
+  # キーワード検索で監視するクエリ一覧
+  keywords:
+    - "SSD"
+    - "モバイルバッテリー"
+  # ジャンルランキングで監視するジャンルID(0=総合)。https://webservice.rakuten.co.jp/documentation/genre-list
+  ranking_genre_ids:
+    - 0
+  hits_per_query: 30
+
+amazon:
+  enabled: false # Amazon Creators APIの認証情報発行後にtrueへ
+  poll_interval_minutes: 30
+  keywords:
+    - "Echo Dot"
+  item_count: 10
+
+rules:
+  # 定価/参考価格に対する割引率がこれ以上なら「激安」判定(Amazonのように定価情報がある場合)
+  min_discount_percent: 25
+  # これまでに観測した最安値からさらにこの割合以上下がったら「激安」判定
+  price_drop_from_history_percent: 15
+  # 履歴が3件未満などまだ判断できない商品でも、タイトルに以下のキーワードがあれば通知対象に含める
+  sale_keywords:
+    - "タイムセール"
+    - "クーポン"
+    - "在庫処分"
+    - "訳あり"
+    - "半額"
+    - "セール"
+  # 同一商品を再通知するまでのクールダウン時間
+  renotify_cooldown_hours: 24
+
+discord:
+  # 該当ロールにメンションしたい場合はロールIDを設定(不要ならnullのまま)
+  mention_role_id: null
