@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 
 import requests
 
@@ -16,6 +17,9 @@ SOURCE_NAME = "rakuten"
 # Web Application 種別で登録したアプリの Allowed websites ("github.com") と一致させる。
 # 楽天API側がRefererを見て許可判定するため固定値を送る。
 REFERER = "https://github.com/"
+
+# 連続リクエストで429(レート制限)になるのを避けるための待機時間(秒)
+REQUEST_INTERVAL_SECONDS = 1.0
 
 
 def _extract_image_url(raw_item: dict) -> str | None:
@@ -75,6 +79,8 @@ def fetch_items(config: RakutenConfig) -> list[Item]:
         except requests.RequestException:
             logger.exception("楽天キーワード検索に失敗しました: %s", keyword)
             continue
+        finally:
+            time.sleep(REQUEST_INTERVAL_SECONDS)
         for raw in raw_items:
             item = _to_item(raw)
             items[item.item_id] = item
@@ -92,6 +98,8 @@ def fetch_items(config: RakutenConfig) -> list[Item]:
         except requests.RequestException:
             logger.exception("楽天ランキング取得に失敗しました: genreId=%s", genre_id)
             continue
+        finally:
+            time.sleep(REQUEST_INTERVAL_SECONDS)
         for raw in raw_items:
             item = _to_item(raw)
             items[item.item_id] = item
