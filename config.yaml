@@ -22,15 +22,11 @@ amazon:
 
 rules:
   # 定価/参考価格に対する割引率がこれ以上なら「激安」判定(Amazonのように定価情報がある場合)
-  min_discount_percent: 25
+  min_discount_percent: 50
   # これまでに観測した最安値からさらにこの割合以上下がったら「激安」判定
-  price_drop_from_history_percent: 15
+  price_drop_from_history_percent: 30
   # 履歴が3件未満などまだ判断できない商品でも、タイトルに以下のキーワードがあれば通知対象に含める
-  # 「クーポン」「セール」は楽天ランキングのほぼ全商品に付いている宣伝文句でフィルタにならないため除外
   sale_keywords:
-    - "タイムセール"
-    - "在庫処分"
-    - "訳あり"
     - "半額"
   # 同一商品を再通知するまでのクールダウン時間
   renotify_cooldown_hours: 24
