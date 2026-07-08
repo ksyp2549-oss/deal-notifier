@@ -49,13 +49,22 @@ class Storage:
                 (source, item_id, price, datetime.now(timezone.utc).isoformat()),
             )
 
-    def get_price_history_stats(self, source: str, item_id: str) -> tuple[int | None, int]:
-        """Returns (min_price_before_this_observation, sample_count) excluding the most recent row."""
+    def get_price_history_stats(
+        self, source: str, item_id: str, window_days: float | None = None
+    ) -> tuple[int | None, int]:
+        """Returns (min_price_before_this_observation, sample_count) excluding the most recent row.
+
+        window_days が指定された場合、直近N日以内に観測された価格のみを対象にする。
+        """
+        query = "SELECT price FROM price_history WHERE source = ? AND item_id = ?"
+        params: list = [source, item_id]
+        if window_days is not None:
+            cutoff = (datetime.now(timezone.utc) - timedelta(days=window_days)).isoformat()
+            query += " AND observed_at >= ?"
+            params.append(cutoff)
+        query += " ORDER BY observed_at DESC"
         with self._connect() as conn:
-            rows = conn.execute(
-                "SELECT price FROM price_history WHERE source = ? AND item_id = ? ORDER BY observed_at DESC",
-                (source, item_id),
-            ).fetchall()
+            rows = conn.execute(query, params).fetchall()
         if len(rows) <= 1:
             return None, len(rows)
         previous = [r[0] for r in rows[1:]]

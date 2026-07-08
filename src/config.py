@@ -17,6 +17,11 @@ class RulesConfig:
     price_drop_from_history_percent: float
     sale_keywords: list[str]
     renotify_cooldown_hours: float
+    # None なら全期間の最安値と比較する
+    price_history_window_days: float | None = None
+    # 指定した場合、この価格帯の商品のみを通知対象にする
+    price_min: int | None = None
+    price_max: int | None = None
 
 
 @dataclass
@@ -55,6 +60,7 @@ class AppConfig:
     amazon: AmazonConfig
     discord: DiscordConfig
     rules: RulesConfig
+    amazon_rules: RulesConfig
     db_path: Path = field(default_factory=lambda: ROOT_DIR / "data" / "deals.db")
 
 
@@ -100,6 +106,27 @@ def load_config(config_path: Path | None = None) -> AppConfig:
         price_drop_from_history_percent=rules_raw["price_drop_from_history_percent"],
         sale_keywords=rules_raw.get("sale_keywords", []),
         renotify_cooldown_hours=rules_raw.get("renotify_cooldown_hours", 24),
+        price_history_window_days=rules_raw.get("price_history_window_days"),
+        price_min=rules_raw.get("price_min"),
+        price_max=rules_raw.get("price_max"),
     )
 
-    return AppConfig(rakuten=rakuten, amazon=amazon, discord=discord, rules=rules)
+    # amazon.rules に指定があればそのフィールドだけ上書きし、それ以外は共通の rules を引き継ぐ
+    amazon_rules_raw = amazon_raw.get("rules", {})
+    amazon_rules = RulesConfig(
+        min_discount_percent=amazon_rules_raw.get("min_discount_percent", rules.min_discount_percent),
+        price_drop_from_history_percent=amazon_rules_raw.get(
+            "price_drop_from_history_percent", rules.price_drop_from_history_percent
+        ),
+        sale_keywords=amazon_rules_raw.get("sale_keywords", rules.sale_keywords),
+        renotify_cooldown_hours=amazon_rules_raw.get("renotify_cooldown_hours", rules.renotify_cooldown_hours),
+        price_history_window_days=amazon_rules_raw.get(
+            "price_history_window_days", rules.price_history_window_days
+        ),
+        price_min=amazon_rules_raw.get("price_min", rules.price_min),
+        price_max=amazon_rules_raw.get("price_max", rules.price_max),
+    )
+
+    return AppConfig(
+        rakuten=rakuten, amazon=amazon, discord=discord, rules=rules, amazon_rules=amazon_rules
+    )

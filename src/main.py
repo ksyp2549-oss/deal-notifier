@@ -6,7 +6,7 @@ from datetime import datetime
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 
-from .config import AppConfig, load_config
+from .config import AppConfig, DiscordConfig, RulesConfig, load_config
 from .notifier.discord import send_deal_notification
 from .rules import evaluate
 from .sources import amazon, rakuten
@@ -19,7 +19,14 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def run_source(name, fetch_items, source_config, app_config: AppConfig, storage: Storage) -> None:
+def run_source(
+    name,
+    fetch_items,
+    source_config,
+    rules: RulesConfig,
+    discord_config: DiscordConfig,
+    storage: Storage,
+) -> None:
     if not source_config.enabled:
         return
 
@@ -32,11 +39,11 @@ def run_source(name, fetch_items, source_config, app_config: AppConfig, storage:
     logger.info("%s: %d件取得しました", name, len(items))
 
     for item in items:
-        deal = evaluate(item, storage, app_config.rules)
+        deal = evaluate(item, storage, rules)
         if deal is None:
             continue
         try:
-            send_deal_notification(app_config.discord, deal)
+            send_deal_notification(discord_config, deal)
             storage.record_notification(item.source, item.item_id, item.price)
             logger.info("通知しました: %s (%s)", item.title, " / ".join(deal.reasons))
         except Exception:
@@ -44,8 +51,8 @@ def run_source(name, fetch_items, source_config, app_config: AppConfig, storage:
 
 
 def run_once(config: AppConfig, storage: Storage) -> None:
-    run_source("rakuten", rakuten.fetch_items, config.rakuten, config, storage)
-    run_source("amazon", amazon.fetch_items, config.amazon, config, storage)
+    run_source("rakuten", rakuten.fetch_items, config.rakuten, config.rules, config.discord, storage)
+    run_source("amazon", amazon.fetch_items, config.amazon, config.amazon_rules, config.discord, storage)
 
 
 def run_forever(config: AppConfig, storage: Storage) -> None:
@@ -56,7 +63,7 @@ def run_forever(config: AppConfig, storage: Storage) -> None:
             run_source,
             "interval",
             minutes=config.rakuten.poll_interval_minutes,
-            args=("rakuten", rakuten.fetch_items, config.rakuten, config, storage),
+            args=("rakuten", rakuten.fetch_items, config.rakuten, config.rules, config.discord, storage),
             next_run_time=datetime.now(),
             id="rakuten",
         )
@@ -65,7 +72,14 @@ def run_forever(config: AppConfig, storage: Storage) -> None:
             run_source,
             "interval",
             minutes=config.amazon.poll_interval_minutes,
-            args=("amazon", amazon.fetch_items, config.amazon, config, storage),
+            args=(
+                "amazon",
+                amazon.fetch_items,
+                config.amazon,
+                config.amazon_rules,
+                config.discord,
+                storage,
+            ),
             next_run_time=datetime.now(),
             id="amazon",
         )

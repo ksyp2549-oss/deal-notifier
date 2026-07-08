@@ -34,13 +34,26 @@ rakuten:
   hits_per_query: 30
 
 amazon:
-  enabled: false # Amazon Creators APIの認証情報発行後にtrueへ
+  # 有効化済み。ただし認証情報(.env の AMAZON_*)を設定するまでは自動的にスキップされる
+  enabled: true
   poll_interval_minutes: 30
+  # 検索キーワード一覧(仮。本格運用前に監視したい商品ジャンルのキーワードに差し替える)
   keywords:
     - "Echo Dot"
   item_count: 10
+  # Amazon専用の判定ルール。ここで指定した項目だけ下の共通rulesを上書きする
+  rules:
+    # 定価に対する割引率がこれ以上なら「激安」判定
+    min_discount_percent: 40
+    # 過去90日の最安値以下(0%以上値下がり=最安値以下)なら「激安」判定
+    price_drop_from_history_percent: 0
+    price_history_window_days: 90
+    # この価格帯の商品のみ通知対象にする
+    price_min: 500
+    price_max: 50000
 
 rules:
+  # 楽天向けの共通ルール(Amazonはamazon.rulesで上書きされる)
   # 定価/参考価格に対する割引率がこれ以上なら「激安」判定(Amazonのように定価情報がある場合)
   min_discount_percent: 50
   # これまでに観測した最安値からさらにこの割合以上下がったら「激安」判定
