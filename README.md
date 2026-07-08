@@ -18,8 +18,12 @@
 
 ### 1. 楽天Web Service ID(すぐ使える)
 
-1. https://webservice.rakuten.co.jp/ でアプリID登録(即時発行、無料)
-2. アフィリエイトリンクにしたい場合は https://affiliate.rakuten.co.jp/ でアフィリエイトIDも取得
+1. https://webservice.rakuten.co.jp/ でアプリ登録(即時発行、無料)。「New App」→ Application type は
+   **Web Application** を選び、Allowed websites に `github.com` を登録する(GitHub Actionsから
+   呼び出すため。実行元IPが毎回変わるのでAPI/Backend Service(IP方式)は使えない)
+2. 登録後、アプリの「Application ID」と、目のアイコンで表示できる「Access Key」の両方をコピーする
+   (2026年のAPI改定でAccess Keyも必須になった)
+3. アフィリエイトリンクにしたい場合は https://affiliate.rakuten.co.jp/ でアフィリエイトIDも取得
 
 ### 2. Discord Webhook
 
@@ -48,6 +52,7 @@
    手順1・2で取得した値を1つずつ登録する(名前は `.env.example` と同じにする):
    - `DISCORD_WEBHOOK_URL`
    - `RAKUTEN_APPLICATION_ID`
+   - `RAKUTEN_ACCESS_KEY`(2026年のAPI改定で必須になった。アプリ管理画面の「Access Key」を目のアイコンで表示してコピー)
    - `RAKUTEN_AFFILIATE_ID`(未取得なら空でOK)
    - Amazonを使う場合は `AMAZON_CREDENTIAL_ID` / `AMAZON_CREDENTIAL_SECRET` / `AMAZON_PARTNER_TAG` も追加
 4. リポジトリの `Actions` タブを開き、ワークフローが有効になっていることを確認

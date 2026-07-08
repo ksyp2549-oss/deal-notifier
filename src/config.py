@@ -23,6 +23,7 @@ class RulesConfig:
 class RakutenConfig:
     enabled: bool
     application_id: str
+    access_key: str
     affiliate_id: str
     poll_interval_minutes: int
     keywords: list[str]
@@ -70,6 +71,7 @@ def load_config(config_path: Path | None = None) -> AppConfig:
     rakuten = RakutenConfig(
         enabled=rakuten_raw["enabled"],
         application_id=os.environ.get("RAKUTEN_APPLICATION_ID", ""),
+        access_key=os.environ.get("RAKUTEN_ACCESS_KEY", ""),
         affiliate_id=os.environ.get("RAKUTEN_AFFILIATE_ID", ""),
         poll_interval_minutes=rakuten_raw["poll_interval_minutes"],
         keywords=rakuten_raw.get("keywords", []),

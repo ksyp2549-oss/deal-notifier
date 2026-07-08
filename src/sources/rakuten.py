@@ -9,9 +9,13 @@ from ..rules import Item
 
 logger = logging.getLogger(__name__)
 
-SEARCH_URL = "https://app.rakuten.co.jp/services/api/IchibaItem/Search/20220601"
-RANKING_URL = "https://app.rakuten.co.jp/services/api/IchibaItem/Ranking/20220601"
+SEARCH_URL = "https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20260701"
+RANKING_URL = "https://openapi.rakuten.co.jp/ichibaranking/api/IchibaItem/Ranking/20220601"
 SOURCE_NAME = "rakuten"
+
+# Web Application 種別で登録したアプリの Allowed websites ("github.com") と一致させる。
+# 楽天API側がRefererを見て許可判定するため固定値を送る。
+REFERER = "https://github.com/"
 
 
 def _extract_image_url(raw_item: dict) -> str | None:
@@ -37,16 +41,21 @@ def _to_item(raw_item: dict) -> Item:
     )
 
 
-def _request(url: str, params: dict) -> list[dict]:
-    resp = requests.get(url, params=params, timeout=10)
+def _request(url: str, params: dict, access_key: str) -> list[dict]:
+    # Referer だけでは REQUEST_CONTEXT_BODY_HTTP_REFERRER_MISSING で拒否される。
+    # Origin も併せて送る必要がある(実APIで確認済み)。
+    headers = {"accessKey": access_key, "Referer": REFERER, "Origin": "https://github.com"}
+    resp = requests.get(url, params=params, headers=headers, timeout=10)
     resp.raise_for_status()
     data = resp.json()
     return [entry["Item"] for entry in data.get("Items", [])]
 
 
 def fetch_items(config: RakutenConfig) -> list[Item]:
-    if not config.application_id:
-        logger.warning("RAKUTEN_APPLICATION_ID が未設定のため楽天の取得をスキップします")
+    if not config.application_id or not config.access_key:
+        logger.warning(
+            "RAKUTEN_APPLICATION_ID または RAKUTEN_ACCESS_KEY が未設定のため楽天の取得をスキップします"
+        )
         return []
 
     items: dict[str, Item] = {}
@@ -62,7 +71,7 @@ def fetch_items(config: RakutenConfig) -> list[Item]:
         if config.affiliate_id:
             params["affiliateId"] = config.affiliate_id
         try:
-            raw_items = _request(SEARCH_URL, params)
+            raw_items = _request(SEARCH_URL, params, config.access_key)
         except requests.RequestException:
             logger.exception("楽天キーワード検索に失敗しました: %s", keyword)
             continue
@@ -79,7 +88,7 @@ def fetch_items(config: RakutenConfig) -> list[Item]:
         if config.affiliate_id:
             params["affiliateId"] = config.affiliate_id
         try:
-            raw_items = _request(RANKING_URL, params)
+            raw_items = _request(RANKING_URL, params, config.access_key)
         except requests.RequestException:
             logger.exception("楽天ランキング取得に失敗しました: genreId=%s", genre_id)
             continue
