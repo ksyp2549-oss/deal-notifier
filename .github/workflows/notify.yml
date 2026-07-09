@@ -35,6 +35,7 @@ jobs:
           AMAZON_CREDENTIAL_SECRET: ${{ secrets.AMAZON_CREDENTIAL_SECRET }}
           AMAZON_PARTNER_TAG: ${{ secrets.AMAZON_PARTNER_TAG }}
           AMAZON_COUNTRY: JP
+          YAHOO_CLIENT_ID: ${{ secrets.YAHOO_CLIENT_ID }}
         run: python -m src.main --once
 
       - name: Persist price history

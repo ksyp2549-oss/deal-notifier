@@ -9,7 +9,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from .config import AppConfig, DiscordConfig, RulesConfig, load_config
 from .notifier.discord import send_deal_notification
 from .rules import evaluate
-from .sources import amazon, rakuten
+from .sources import amazon, rakuten, yahoo
 from .storage import Storage
 
 logging.basicConfig(
@@ -53,6 +53,7 @@ def run_source(
 def run_once(config: AppConfig, storage: Storage) -> None:
     run_source("rakuten", rakuten.fetch_items, config.rakuten, config.rules, config.discord, storage)
     run_source("amazon", amazon.fetch_items, config.amazon, config.amazon_rules, config.discord, storage)
+    run_source("yahoo", yahoo.fetch_items, config.yahoo, config.yahoo_rules, config.discord, storage)
 
 
 def run_forever(config: AppConfig, storage: Storage) -> None:
@@ -82,6 +83,22 @@ def run_forever(config: AppConfig, storage: Storage) -> None:
             ),
             next_run_time=datetime.now(),
             id="amazon",
+        )
+    if config.yahoo.enabled:
+        scheduler.add_job(
+            run_source,
+            "interval",
+            minutes=config.yahoo.poll_interval_minutes,
+            args=(
+                "yahoo",
+                yahoo.fetch_items,
+                config.yahoo,
+                config.yahoo_rules,
+                config.discord,
+                storage,
+            ),
+            next_run_time=datetime.now(),
+            id="yahoo",
         )
 
     if not scheduler.get_jobs():

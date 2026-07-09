@@ -49,6 +49,16 @@ class AmazonConfig:
 
 
 @dataclass
+class YahooConfig:
+    enabled: bool
+    client_id: str
+    poll_interval_minutes: int
+    keywords: list[str]
+    genre_category_ids: list[int]
+    hits_per_query: int
+
+
+@dataclass
 class DiscordConfig:
     webhook_url: str
     mention_role_id: str | None
@@ -58,10 +68,29 @@ class DiscordConfig:
 class AppConfig:
     rakuten: RakutenConfig
     amazon: AmazonConfig
+    yahoo: YahooConfig
     discord: DiscordConfig
     rules: RulesConfig
     amazon_rules: RulesConfig
+    yahoo_rules: RulesConfig
     db_path: Path = field(default_factory=lambda: ROOT_DIR / "data" / "deals.db")
+
+
+def _build_rules(base: RulesConfig, overrides: dict) -> RulesConfig:
+    """overrides に指定があればそのフィールドだけ上書きし、それ以外は base を引き継ぐ"""
+    return RulesConfig(
+        min_discount_percent=overrides.get("min_discount_percent", base.min_discount_percent),
+        price_drop_from_history_percent=overrides.get(
+            "price_drop_from_history_percent", base.price_drop_from_history_percent
+        ),
+        sale_keywords=overrides.get("sale_keywords", base.sale_keywords),
+        renotify_cooldown_hours=overrides.get("renotify_cooldown_hours", base.renotify_cooldown_hours),
+        price_history_window_days=overrides.get(
+            "price_history_window_days", base.price_history_window_days
+        ),
+        price_min=overrides.get("price_min", base.price_min),
+        price_max=overrides.get("price_max", base.price_max),
+    )
 
 
 def load_config(config_path: Path | None = None) -> AppConfig:
@@ -71,6 +100,7 @@ def load_config(config_path: Path | None = None) -> AppConfig:
 
     rakuten_raw = raw["rakuten"]
     amazon_raw = raw["amazon"]
+    yahoo_raw = raw.get("yahoo", {})
     rules_raw = raw["rules"]
     discord_raw = raw["discord"]
 
@@ -96,6 +126,15 @@ def load_config(config_path: Path | None = None) -> AppConfig:
         item_count=amazon_raw.get("item_count", 10),
     )
 
+    yahoo = YahooConfig(
+        enabled=yahoo_raw.get("enabled", False),
+        client_id=os.environ.get("YAHOO_CLIENT_ID", ""),
+        poll_interval_minutes=yahoo_raw.get("poll_interval_minutes", 15),
+        keywords=yahoo_raw.get("keywords", []),
+        genre_category_ids=yahoo_raw.get("genre_category_ids", []),
+        hits_per_query=yahoo_raw.get("hits_per_query", 20),
+    )
+
     discord = DiscordConfig(
         webhook_url=os.environ.get("DISCORD_WEBHOOK_URL", ""),
         mention_role_id=discord_raw.get("mention_role_id"),
@@ -111,22 +150,15 @@ def load_config(config_path: Path | None = None) -> AppConfig:
         price_max=rules_raw.get("price_max"),
     )
 
-    # amazon.rules に指定があればそのフィールドだけ上書きし、それ以外は共通の rules を引き継ぐ
-    amazon_rules_raw = amazon_raw.get("rules", {})
-    amazon_rules = RulesConfig(
-        min_discount_percent=amazon_rules_raw.get("min_discount_percent", rules.min_discount_percent),
-        price_drop_from_history_percent=amazon_rules_raw.get(
-            "price_drop_from_history_percent", rules.price_drop_from_history_percent
-        ),
-        sale_keywords=amazon_rules_raw.get("sale_keywords", rules.sale_keywords),
-        renotify_cooldown_hours=amazon_rules_raw.get("renotify_cooldown_hours", rules.renotify_cooldown_hours),
-        price_history_window_days=amazon_rules_raw.get(
-            "price_history_window_days", rules.price_history_window_days
-        ),
-        price_min=amazon_rules_raw.get("price_min", rules.price_min),
-        price_max=amazon_rules_raw.get("price_max", rules.price_max),
-    )
+    amazon_rules = _build_rules(rules, amazon_raw.get("rules", {}))
+    yahoo_rules = _build_rules(rules, yahoo_raw.get("rules", {}))
 
     return AppConfig(
-        rakuten=rakuten, amazon=amazon, discord=discord, rules=rules, amazon_rules=amazon_rules
+        rakuten=rakuten,
+        amazon=amazon,
+        yahoo=yahoo,
+        discord=discord,
+        rules=rules,
+        amazon_rules=amazon_rules,
+        yahoo_rules=yahoo_rules,
     )
