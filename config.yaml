@@ -57,7 +57,7 @@ rules:
   # 定価/参考価格に対する割引率がこれ以上なら「激安」判定(Amazonのように定価情報がある場合)
   min_discount_percent: 50
   # これまでに観測した最安値からさらにこの割合以上下がったら「激安」判定
-  price_drop_from_history_percent: 30
+  price_drop_from_history_percent: 20
   # タイトルキーワードでの判定は廃止(誇大表現に反応してしまうため)。値下がり実績のみで判定する
   sale_keywords: []
   # 同一商品を再通知するまでのクールダウン時間
