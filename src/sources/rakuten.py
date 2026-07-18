@@ -32,7 +32,7 @@ def _extract_image_url(raw_item: dict) -> str | None:
     return first
 
 
-def _to_item(raw_item: dict) -> Item:
+def _to_item(raw_item: dict, category_id: int | None = None) -> Item:
     return Item(
         source=SOURCE_NAME,
         item_id=raw_item["itemCode"],
@@ -42,6 +42,9 @@ def _to_item(raw_item: dict) -> Item:
         shop=raw_item.get("shopName"),
         price=int(raw_item.get("itemPrice", 0)),
         list_price=None,  # Ichiba Item Search API does not reliably expose a list price
+        # ランキング取得時に問い合わせたジャンルIDをそのまま使う(検索APIのgenreIdは
+        # 末端カテゴリのため、config側で指定したトップレベルIDとは一致しない)
+        category_id=category_id,
     )
 
 
@@ -101,7 +104,7 @@ def fetch_items(config: RakutenConfig) -> list[Item]:
         finally:
             time.sleep(REQUEST_INTERVAL_SECONDS)
         for raw in raw_items:
-            item = _to_item(raw)
+            item = _to_item(raw, category_id=genre_id)
             items[item.item_id] = item
 
     return list(items.values())

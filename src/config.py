@@ -22,6 +22,9 @@ class RulesConfig:
     # 指定した場合、この価格帯の商品のみを通知対象にする
     price_min: int | None = None
     price_max: int | None = None
+    # ジャンル/カテゴリIDごとに price_drop_from_history_percent を上書きする
+    # (例: {100227: 1.5} で楽天の食品ジャンルだけ1.5%値下がりで通知)
+    category_price_drop_overrides: dict[int, float] = field(default_factory=dict)
 
 
 @dataclass
@@ -90,6 +93,9 @@ def _build_rules(base: RulesConfig, overrides: dict) -> RulesConfig:
         ),
         price_min=overrides.get("price_min", base.price_min),
         price_max=overrides.get("price_max", base.price_max),
+        category_price_drop_overrides=overrides.get(
+            "category_price_drop_overrides", base.category_price_drop_overrides
+        ),
     )
 
 
@@ -148,6 +154,7 @@ def load_config(config_path: Path | None = None) -> AppConfig:
         price_history_window_days=rules_raw.get("price_history_window_days"),
         price_min=rules_raw.get("price_min"),
         price_max=rules_raw.get("price_max"),
+        category_price_drop_overrides=rules_raw.get("category_price_drop_overrides", {}),
     )
 
     amazon_rules = _build_rules(rules, amazon_raw.get("rules", {}))

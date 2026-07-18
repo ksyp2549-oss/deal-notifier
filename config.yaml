@@ -79,6 +79,9 @@ yahoo:
     min_discount_percent: 1000 # 実質無効化(定価からの割引では判定しない)
     price_drop_from_history_percent: 20
     sale_keywords: []
+    # 食品(2498)は他ジャンルより値動きが小さいため、閾値を緩めて通知しやすくする
+    category_price_drop_overrides:
+      2498: 1.5
 
 rules:
   # 楽天向けの共通ルール(Amazon/Yahooはそれぞれのrulesで上書きされる)
@@ -90,6 +93,9 @@ rules:
   sale_keywords: []
   # 同一商品を再通知するまでのクールダウン時間
   renotify_cooldown_hours: 24
+  # 食品(100227)は他ジャンルより値動きが小さいため、閾値を緩めて通知しやすくする
+  category_price_drop_overrides:
+    100227: 1.5
 
 discord:
   # 該当ロールにメンションしたい場合はロールIDを設定(不要ならnullのまま)

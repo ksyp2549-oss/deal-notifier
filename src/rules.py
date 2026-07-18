@@ -16,6 +16,9 @@ class Item:
     shop: str | None
     price: int
     list_price: int | None = None
+    # トップレベルのジャンル/カテゴリID(取得できる場合)。ジャンル別にルールを
+    # 上書きしたい場合に使う(例: 食品だけ値下がり判定を緩める)。
+    category_id: int | None = None
 
 
 @dataclass
@@ -47,7 +50,10 @@ def evaluate(item: Item, storage: Storage, rules: RulesConfig) -> DealResult | N
     )
     if min_price is not None and item.price < min_price:
         drop = (1 - item.price / min_price) * 100
-        if drop >= rules.price_drop_from_history_percent:
+        threshold = rules.price_drop_from_history_percent
+        if item.category_id is not None and item.category_id in rules.category_price_drop_overrides:
+            threshold = rules.category_price_drop_overrides[item.category_id]
+        if drop >= threshold:
             window_label = (
                 f"過去{rules.price_history_window_days:.0f}日"
                 if rules.price_history_window_days is not None

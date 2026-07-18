@@ -24,7 +24,7 @@ USER_AGENT = (
 REQUEST_INTERVAL_SECONDS = 1.0
 
 
-def _to_item(raw_item: dict) -> Item:
+def _to_item(raw_item: dict, category_id: int | None = None) -> Item:
     price_label = raw_item.get("priceLabel") or {}
     list_price = price_label.get("fixedPrice")
 
@@ -39,6 +39,8 @@ def _to_item(raw_item: dict) -> Item:
         shop=(raw_item.get("seller") or {}).get("name"),
         price=int(raw_item.get("price", 0)),
         list_price=int(list_price) if list_price else None,
+        # ジャンル取得時に問い合わせたトップレベルのgenre_category_idをそのまま使う
+        category_id=category_id,
     )
 
 
@@ -92,7 +94,7 @@ def fetch_items(config: YahooConfig) -> list[Item]:
         finally:
             time.sleep(REQUEST_INTERVAL_SECONDS)
         for raw in raw_items:
-            item = _to_item(raw)
+            item = _to_item(raw, category_id=genre_id)
             items[item.item_id] = item
 
     return list(items.values())
